@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: >
+      - run: |
           strace tail -n1 LICENSE
+          make docker
+          docker run -it --rm strace tail -n1 LICENSE
 

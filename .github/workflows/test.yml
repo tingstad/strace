@@ -10,6 +10,6 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           strace tail -n1 LICENSE
-          make docker
+          docker build -t strace --build-arg GO_VERSION=$(make goversion) .
           docker run -it --rm strace tail -n1 LICENSE
 

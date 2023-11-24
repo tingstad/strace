@@ -49,7 +49,7 @@ func main() {
 
 		syscallNum := int(regs.Orig_rax)
 
-		if exit {
+		if exit || true {
 
 			// https://man7.org/linux/man-pages/man2/syscall.2.html
 			//   Arch/ABI    arg1  arg2  arg3  arg4  arg5  arg6  arg7   Notes
@@ -104,29 +104,12 @@ func main() {
 					arg1, arg2, arg3, arg4, arg5, arg6)
 			}
 
-			fmt.Printf("%s\n", str)
-			ss.inc(syscallNum)
-		}
-
-		if syscallNum == syscall.SYS_READ {
-			var arg1 uint64 = regs.Rdi
-			var arg2 uint64 = regs.Rsi
-			var arg3 uint64 = regs.Rdx
-			var retVal uint64 = regs.Rax
-			str := ss.getName(syscallNum)
-			// ssize_t read(int fildes, void *buf, size_t nbyte)
-			fd := fileDescriptor[arg1]
-			if retVal <= arg3 {
-				buf := readPtraceTextBuf(pid, uintptr(arg2), int(retVal))
-				buf = fmt.Sprintf("%q", buf)
-				if len(buf) > 40 {
-					buf = buf[0:18] + `" ... "` + buf[len(buf)-19:]
-				}
-				str += fmt.Sprintf(` (%s, %d, %d) => %d: %s`, fd, arg2, arg3, retVal, buf)
-			} else {
-				str += fmt.Sprintf(` (%s, %d, %d) => %d`, fd, arg2, arg3, retVal)
+			state := "PRE"
+			if exit {
+				state = "EPI"
 			}
-			fmt.Printf("exit:%t %s\n", exit, str)
+
+			fmt.Printf("%s: %s\n", state, str)
 		}
 
 		err = syscall.PtraceSyscall(pid, 0) // wait for next syscall to begin or exit

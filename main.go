@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 )
 
@@ -61,11 +62,14 @@ func main() {
 			//   ────────────────────────────────────────────────────────────
 			//   x86-64      syscall           rax     rax  rdx  -      5
 
-			str := ss.getName(syscallNum)
+			str := strings.ToLower(ss.getName(syscallNum))
 
 			var arg1 uint64 = regs.Rdi
 			var arg2 uint64 = regs.Rsi
 			var arg3 uint64 = regs.Rdx
+			var arg4 uint64 = regs.R10
+			var arg5 uint64 = regs.R8
+			var arg6 uint64 = regs.R9
 			var retVal uint64 = regs.Rax
 
 			switch syscallNum {
@@ -77,7 +81,7 @@ func main() {
 				path := readPtraceText(pid, uintptr(arg1))
 				fd := retVal
 				str += fmt.Sprintf(` ("%s") => FD %d`, path, fd)
-				fileDescriptor[fd] = fmt.Sprintf(`fd%d<"%s">`, fd, path)
+				fileDescriptor[fd] = fmt.Sprintf(`%d<%s>`, fd, path)
 			case syscall.SYS_READ:
 				// ssize_t read(int fildes, void *buf, size_t nbyte)
 				fd := fileDescriptor[arg1]
@@ -85,7 +89,7 @@ func main() {
 					buf := readPtraceTextBuf(pid, uintptr(arg2), int(retVal))
 					buf = fmt.Sprintf("%q", buf)
 					if len(buf) > 40 {
-						buf = buf[0:18] + `" ... "` + buf[len(buf)-19:]
+						buf = buf[0:18] + `"..."` + buf[len(buf)-19:]
 					}
 					str += fmt.Sprintf(` (%s, %d, %d) => %d: %s`, fd, arg2, arg3, retVal, buf)
 				} else {
@@ -95,6 +99,14 @@ func main() {
 				// off_t lseek(int fildes, off_t offset, int whence)
 				fd := fileDescriptor[arg1]
 				str += fmt.Sprintf(` (%s, %d, %d) => %d`, fd, arg2, arg3, retVal)
+			case syscall.SYS_MMAP:
+				// void * mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
+				str += fmt.Sprintf(` (%d, %d, %d, %d, %d, %d)`,
+					arg1, arg2, arg3, arg4, arg5, arg6)
+			case syscall.SYS_WRITE:
+				// ssize_t write(int fd, const void *buf, size_t count)
+				buf := readPtraceTextBuf(pid, uintptr(arg2), int(arg3))
+				str += fmt.Sprintf(` (%d, %q, %d)`, arg1, buf, arg3)
 			}
 
 			fmt.Printf("%s\n", str)

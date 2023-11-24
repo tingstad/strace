@@ -97,8 +97,13 @@ func main() {
 				}
 			case syscall.SYS_LSEEK:
 				// off_t lseek(int fildes, off_t offset, int whence)
+				// If whence is SEEK_SET, the file offset shall be set to offset bytes.
+				// If whence is SEEK_CUR, the file offset shall be set to its current location plus offset.
+				// If whence is SEEK_END, the file offset shall be set to the size of the file plus offset.
+				// https://pubs.opengroup.org/onlinepubs/009696799/functions/lseek.html
 				fd := fileDescriptor[arg1]
-				str += fmt.Sprintf(` (%s, %d, %d) => %d`, fd, arg2, arg3, retVal)
+				whence := map[int]string{0: "SEEK_SET", 1: "SEEK_CUR", 2: "SEEK_END"}
+				str += fmt.Sprintf(` (%s, %d, %s) => %d`, fd, arg2, whence[int(arg3)], retVal)
 			case syscall.SYS_MMAP:
 				// void * mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
 				str += fmt.Sprintf(` (%d, %d, %d, %d, %d, %d)`,

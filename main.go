@@ -75,12 +75,12 @@ func main() {
 			switch syscallNum {
 			case syscall.SYS_GETUID, syscall.SYS_GETEUID:
 				// uid_t get[e]uid(void)
-				str += fmt.Sprintf(` () => %d`, retVal)
+				str += fmt.Sprintf(`() = %d`, retVal)
 			case syscall.SYS_OPEN:
 				// int open(const char *path, int oflag, ...)
 				path := readPtraceText(pid, uintptr(arg1))
 				fd := retVal
-				str += fmt.Sprintf(` ("%s") => FD %d`, path, fd)
+				str += fmt.Sprintf(`("%s", %d) = %d`, path, arg2, fd)
 				fileDescriptor[fd] = fmt.Sprintf(`%d<%s>`, fd, path)
 			case syscall.SYS_READ:
 				// ssize_t read(int fildes, void *buf, size_t nbyte)
@@ -91,9 +91,9 @@ func main() {
 					if len(buf) > 40 {
 						buf = buf[0:18] + `"..."` + buf[len(buf)-19:]
 					}
-					str += fmt.Sprintf(` (%s, %d, %d) => %d: %s`, fd, arg2, arg3, retVal, buf)
+					str += fmt.Sprintf(`(%s, %d, %d) = %d: %s`, fd, arg2, arg3, retVal, buf)
 				} else {
-					str += fmt.Sprintf(` (%s, %d, %d) => %d`, fd, arg2, arg3, retVal)
+					str += fmt.Sprintf(`(%s, %d, %d) = %d`, fd, arg2, arg3, retVal)
 				}
 			case syscall.SYS_LSEEK:
 				// off_t lseek(int fildes, off_t offset, int whence)
@@ -103,15 +103,15 @@ func main() {
 				// https://pubs.opengroup.org/onlinepubs/009696799/functions/lseek.html
 				fd := fileDescriptor[arg1]
 				whence := map[int]string{0: "SEEK_SET", 1: "SEEK_CUR", 2: "SEEK_END"}
-				str += fmt.Sprintf(` (%s, %d, %s) => %d`, fd, arg2, whence[int(arg3)], retVal)
+				str += fmt.Sprintf(`(%s, %d, %s) = %d`, fd, arg2, whence[int(arg3)], retVal)
 			case syscall.SYS_MMAP:
 				// void * mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
-				str += fmt.Sprintf(` (%d, %d, %d, %d, %d, %d)`,
+				str += fmt.Sprintf(`(%d, %d, %d, %d, %d, %d)`,
 					arg1, arg2, arg3, arg4, arg5, arg6)
 			case syscall.SYS_WRITE:
 				// ssize_t write(int fd, const void *buf, size_t count)
 				buf := readPtraceTextBuf(pid, uintptr(arg2), int(arg3))
-				str += fmt.Sprintf(` (%d, %q, %d)`, arg1, buf, arg3)
+				str += fmt.Sprintf(`(%d, %q, %d)`, arg1, buf, arg3)
 			}
 
 			fmt.Printf("%s\n", str)

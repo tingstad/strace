@@ -10,6 +10,7 @@ WORKDIR /build
 
 COPY go.mod go.sum *.go LICENSE ./
 COPY syscalls/ ./syscalls/
+COPY proxy/ ./proxy/
 
 RUN go build -o main .
 

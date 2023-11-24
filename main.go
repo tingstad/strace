@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
-	"unsafe"
 )
 
 func main() {
@@ -110,24 +108,25 @@ func main() {
 			ss.inc(syscallNum)
 		}
 
-		// 3 == syscall.SYS_READ
-		if syscallNum == 3 { //regs.Orig_rax == syscall.SYS_READ && fileDescriptors[int(regs.Rdi)] == "LICENSE" {
-			//var retVal uint64 = regs.Rax
-			retVal := 10240
-			data := []byte(strings.Repeat("x", int(retVal)-1))
-			data = append(data, byte(0))
-			addr := uintptr(unsafe.Pointer(&data))
-			//addr := uintptr(regs.Rsi)
-			//addr := uintptr(&data)
-			//if c, err := syscall.PtracePokeText(pid, addr, data); err != nil {
-			//	panic(err)
-			//} else {
-			//	fmt.Printf("poked %d\n", c)
-			//}
-			regs.Rax = uint64(addr)
-			if err = syscall.PtraceSetRegs(pid, &regs); err != nil {
-				panic(err)
+		if syscallNum == syscall.SYS_READ {
+			var arg1 uint64 = regs.Rdi
+			var arg2 uint64 = regs.Rsi
+			var arg3 uint64 = regs.Rdx
+			var retVal uint64 = regs.Rax
+			str := ss.getName(syscallNum)
+			// ssize_t read(int fildes, void *buf, size_t nbyte)
+			fd := fileDescriptor[arg1]
+			if retVal <= arg3 {
+				buf := readPtraceTextBuf(pid, uintptr(arg2), int(retVal))
+				buf = fmt.Sprintf("%q", buf)
+				if len(buf) > 40 {
+					buf = buf[0:18] + `" ... "` + buf[len(buf)-19:]
+				}
+				str += fmt.Sprintf(` (%s, %d, %d) => %d: %s`, fd, arg2, arg3, retVal, buf)
+			} else {
+				str += fmt.Sprintf(` (%s, %d, %d) => %d`, fd, arg2, arg3, retVal)
 			}
+			fmt.Printf("exit:%t %s\n", exit, str)
 		}
 
 		err = syscall.PtraceSyscall(pid, 0) // wait for next syscall to begin or exit

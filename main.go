@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strace/syscalls"
 	"strings"
 	"syscall"
 )
 
 func main() {
-	var ss syscallCounter
-
-	ss = ss.init()
-
 	fmt.Printf("Run %v\n", os.Args[1:])
 
 	cmd := exec.Command(os.Args[1], os.Args[2:]...)
@@ -62,7 +59,7 @@ func main() {
 			//   ────────────────────────────────────────────────────────────
 			//   x86-64      syscall           rax     rax  rdx  -      5
 
-			str := strings.ToLower(ss.getName(syscallNum))
+			str := strings.ToLower(syscalls.GetName(syscallNum))
 
 			var arg1 uint64 = regs.Rdi
 			var arg2 uint64 = regs.Rsi
@@ -120,7 +117,6 @@ func main() {
 			}
 
 			fmt.Printf("%s\n", str)
-			ss.inc(syscallNum)
 		}
 
 		err = syscall.PtraceSyscall(pid, 0) // wait for next syscall to begin or exit
@@ -135,8 +131,6 @@ func main() {
 
 		exit = !exit
 	}
-
-	ss.print()
 }
 
 func readPtraceText(pid int, addr uintptr) string {

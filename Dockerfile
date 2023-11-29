@@ -12,7 +12,7 @@ COPY go.mod go.sum *.go LICENSE ./
 COPY syscalls/ ./syscalls/
 COPY generate/ ./generate/
 
-RUN go test ./... && go generate ./... && go build -o main .
+RUN go generate ./... && go test ./... && go build -o main .
 
 FROM alpine:3.18.2
 

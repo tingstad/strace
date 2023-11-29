@@ -112,6 +112,11 @@ func main() {
 				// ssize_t write(int fd, const void *buf, size_t count)
 				buf := readPtraceTextBuf(pid, uintptr(arg2), int(arg3))
 				str += fmt.Sprintf(`(%d, %q, %d)`, arg1, buf, arg3)
+			case syscall.SYS_STAT:
+				// int stat(const char *restrict pathname, struct stat *restrict statbuf)
+				path := readPtraceText(pid, uintptr(arg1))
+				str += fmt.Sprintf(`(%s, %d) = %d`, path, arg2, retVal)
+
 			}
 
 			fmt.Printf("%s\n", str)

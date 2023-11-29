@@ -137,10 +137,10 @@ func main() {
 func readPtraceText(pid int, addr uintptr) string {
 	s := ""
 	buf := []byte{1}
-	for i := addr; buf[0] != byte(0); i++ {
+	for i := addr; ; i++ {
 		if c, err := syscall.PtracePeekText(pid, i, buf); err != nil {
 			panic(err)
-		} else if c == 0 {
+		} else if c == 0 || buf[0] == 0 {
 			break
 		}
 		s += string(buf)

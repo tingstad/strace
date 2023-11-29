@@ -2,14 +2,6 @@ package syscalls
 
 import (
 	"fmt"
-	"go/ast"
-	"go/importer"
-	"go/parser"
-	"go/token"
-	"go/types"
-	"log"
-	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -21,41 +13,10 @@ func GetName(syscallID uint64) string {
 	}
 }
 
-func init() {
-	src := `package main
-		import "syscall"
-		
-		const foo = syscall.SYS_WRITE`
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "src.go", src, 0)
-	if err != nil {
-		log.Fatal(err) // parse error
-	}
-	conf := types.Config{Importer: importer.Default()}
-	pkg, err := conf.Check("a/path", fset, []*ast.File{f}, nil)
-	if err != nil {
-		log.Fatal(err) // type error
-	}
-	scope := pkg.Imports()[0].Scope() // "syscall" import
-	for _, name := range scope.Names() {
-		if !strings.HasPrefix(name, "SYS_") {
-			continue
-		}
-		obj := scope.Lookup(name)
-		if c, ok := obj.(*types.Const); ok {
-			i, err := strconv.Atoi(c.Val().String())
-			if err != nil {
-				continue
-			}
-			syscallNames[i] = strings.TrimPrefix(name, "SYS_")
-		}
-	}
-}
-
 // common UNIX system calls, present in all of
 // zsysnum_{darwin,dragonfly,freebsd,linux,netbsd,openbsd}_*
 var syscallNames = map[int]string{
-	//syscall.SYS_ACCT:         "ACCT",
+	syscall.SYS_ACCT:         "ACCT",
 	syscall.SYS_CHDIR:        "CHDIR",
 	syscall.SYS_CHROOT:       "CHROOT",
 	syscall.SYS_CLOSE:        "CLOSE",

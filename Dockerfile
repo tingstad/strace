@@ -11,7 +11,7 @@ WORKDIR /build
 COPY go.mod go.sum *.go LICENSE ./
 COPY syscalls/ ./syscalls/
 
-RUN go build -o main .
+RUN go test ./... && go build -o main .
 
 FROM alpine:3.18.2
 

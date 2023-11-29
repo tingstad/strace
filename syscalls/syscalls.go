@@ -5,6 +5,8 @@ import (
 	"syscall"
 )
 
+//go:generate go run ../generate/main.go
+
 func GetName(syscallID uint64) string {
 	if name, ok := syscallNames[int(syscallID)]; ok {
 		return name

@@ -5,6 +5,8 @@ import (
 	"syscall"
 )
 
+//go:generate go run ../generate/main.go
+
 func GetName(syscallID int) string {
 	if name, ok := syscallNames[syscallID]; ok {
 		return name
@@ -16,7 +18,7 @@ func GetName(syscallID int) string {
 // common UNIX system calls, present in all of
 // zsysnum_{darwin,dragonfly,freebsd,linux,netbsd,openbsd}_*
 var syscallNames = map[int]string{
-	syscall.SYS_ACCT:         "ACCT",
+	//syscall.SYS_ACCT:         "ACCT",
 	syscall.SYS_CHDIR:        "CHDIR",
 	syscall.SYS_CHROOT:       "CHROOT",
 	syscall.SYS_CLOSE:        "CLOSE",

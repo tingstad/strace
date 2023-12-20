@@ -88,7 +88,10 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 		str += fmt.Sprintf(`%d`, retVal)
 	}
 
-	fmt.Printf("= %s\n", str)
+	if len(str) > 0 {
+		str = fmt.Sprintf("= %s", str)
+	}
+	fmt.Printf("%s\n", str)
 }
 
 func formatFileDesc(fd int, path string) string {

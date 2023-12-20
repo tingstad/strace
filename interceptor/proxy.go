@@ -15,10 +15,10 @@ type proxy struct {
 	filename     string
 	url          string
 	httpClient   http.Client
-	Size         int64
-	Cursor       int64
-	Date         string
-	LastModified string
+	size         int64
+	cursor       int64
+	date         string
+	lastModified string
 	contentType  string
 	file         *os.File
 	enabled      bool
@@ -38,7 +38,7 @@ func NewProxy(filename, url string, provider Provider) *proxy {
 	p := proxy{
 		filename:   filename,
 		url:        url,
-		Size:       -1,
+		size:       -1,
 		httpClient: http.Client{Timeout: 5 * time.Second},
 		enabled:    filename != "" && url != "",
 		provider:   provider,
@@ -62,7 +62,7 @@ func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	case syscall.SYS_LSEEK:
 		// off_t lseek(int fildes, off_t offset, int whence)
 		if p.filename == p.provider.FileName(arg1) {
-			oldOffset := p.Cursor
+			oldOffset := p.cursor
 			newOffset := int64(-1)
 			// If whence is SEEK_SET, the file offset shall be set to offset bytes.
 			// If whence is SEEK_CUR, the file offset shall be set to its current location plus offset.
@@ -78,7 +78,7 @@ func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 			default:
 				panic(fmt.Sprintf("LSEEK whence/arg3 unexpected value: %d", whence))
 			}
-			p.Cursor = newOffset
+			p.cursor = newOffset
 		}
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
@@ -94,23 +94,23 @@ func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 			if n < arg3 {
 				panic(fmt.Sprintf("got %d bytes but wanted %d", n, arg3))
 			}
-			written, err := p.file.WriteAt(buf, p.Cursor)
+			written, err := p.file.WriteAt(buf, p.cursor)
 			if err != nil {
 				panic(fmt.Sprintf("file write: %v", err))
 			}
 			if written < n {
 				panic(fmt.Sprintf("file write %d < %d", written, n))
 			}
-			p.Cursor += int64(n)
+			p.cursor += int64(n)
 		}
 	}
 }
 
 func (p *proxy) getSize() int64 {
-	if p.Size == -1 {
+	if p.size == -1 {
 		p.fetchSize()
 	}
-	return p.Size
+	return p.size
 }
 
 func (p *proxy) fetchSize() {
@@ -125,16 +125,16 @@ func (p *proxy) fetchSize() {
 	if size, err := strconv.Atoi(length); err != nil {
 		panic(fmt.Sprintf(`invalid content-length "%s": %v`, length, err))
 	} else {
-		p.Size = int64(size)
+		p.size = int64(size)
 	}
 	if ranges := resp.Header.Get("accept-ranges"); !strings.Contains(ranges, "bytes") {
 		panic(fmt.Sprintf(`accept-ranges "%s" does not accept bytes`, ranges))
 	}
 	p.contentType = resp.Header.Get("content-type")
-	p.Date = resp.Header.Get("date")
-	p.LastModified = resp.Header.Get("last-modified")
+	p.date = resp.Header.Get("date")
+	p.lastModified = resp.Header.Get("last-modified")
 
-	b := make([]byte, p.Size)
+	b := make([]byte, p.size)
 	n, err := p.file.Write(b)
 	if err != nil {
 		panic(fmt.Sprintf(`writing to new file: %v`, err))
@@ -163,14 +163,14 @@ func (p *proxy) Read(fd int, n int) ([]byte, error) {
 	if err != nil {
 		panic(fmt.Sprintf("http.NewRequest failed: %v", err))
 	}
-	if start, size := p.Cursor, p.Size; start > p.Size {
+	if start, size := p.cursor, p.size; start > p.size {
 		panic(fmt.Sprintf("range start %d larger than size %d", start, size))
 	}
-	end := p.Cursor + int64(n)
-	if size := p.Size; end > p.Size {
+	end := p.cursor + int64(n)
+	if size := p.size; end > p.size {
 		panic(fmt.Sprintf("range end %d larger than size %d", end, size))
 	}
-	rangeHeader := fmt.Sprintf("bytes=%d-%d", p.Cursor, end)
+	rangeHeader := fmt.Sprintf("bytes=%d-%d", p.cursor, end)
 	req.Header.Set("Range", rangeHeader)
 	resp, err := p.httpClient.Do(req)
 	if err != nil {

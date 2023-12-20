@@ -19,7 +19,7 @@ type proxy struct {
 	Cursor       int64
 	Date         string
 	LastModified string
-	ContentType  string
+	contentType  string
 	file         *os.File
 	enabled      bool
 	interceptors map[int]func()
@@ -130,7 +130,7 @@ func (p *proxy) fetchSize() {
 	if ranges := resp.Header.Get("accept-ranges"); !strings.Contains(ranges, "bytes") {
 		panic(fmt.Sprintf(`accept-ranges "%s" does not accept bytes`, ranges))
 	}
-	p.ContentType = resp.Header.Get("content-type")
+	p.contentType = resp.Header.Get("content-type")
 	p.Date = resp.Header.Get("date")
 	p.LastModified = resp.Header.Get("last-modified")
 

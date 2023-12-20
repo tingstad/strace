@@ -21,9 +21,7 @@ type writer struct {
 func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	syscallName := strings.ToLower(syscalls.GetName(syscallNum))
 
-	fmt.Printf("%s", syscallName)
-
-	str := ""
+	str := syscallName
 
 	switch syscallNum {
 	case syscall.SYS_GETUID, syscall.SYS_GETEUID:
@@ -91,9 +89,8 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 	}
 
 	if len(str) > 0 {
-		str = fmt.Sprintf("= %s", str)
+		fmt.Printf("= %s\n", str)
 	}
-	fmt.Printf("%s\n", str)
 }
 
 func formatFileDesc(fd int, path string) string {

@@ -13,7 +13,7 @@ type writer struct {
 	temp     string
 }
 
-func NewWriter(provider Provider) *writer {
+func Writer(provider Provider) *writer {
 	return &writer{provider, ""}
 }
 

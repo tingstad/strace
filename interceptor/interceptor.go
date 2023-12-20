@@ -5,6 +5,7 @@ type Interceptor interface {
 	After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int)
 }
 
+// Provider provides access to common functionality and data
 type Provider interface {
 	ReadPtraceText(addr uintptr) string
 	ReadPtraceTextBuf(addr uintptr, size int) string

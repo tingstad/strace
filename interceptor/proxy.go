@@ -26,7 +26,7 @@ type proxy struct {
 	provider     Provider
 }
 
-func NewProxy(filename, url string, provider Provider) *proxy {
+func Proxy(filename, url string, provider Provider) *proxy {
 	p := proxy{
 		filename:   filename,
 		url:        url,

@@ -206,7 +206,3 @@ func (p *Proxy) open() {
 	}
 	p.file = file
 }
-
-func (p *Proxy) IsEnabled() bool {
-	return p.enabled
-}

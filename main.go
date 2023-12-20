@@ -44,13 +44,14 @@ func main() {
 	exit := true
 
 	fileDescriptor := make(map[int]string)
-	interceptors := make(map[string]interceptor.Interceptor)
 
 	pro := provider{
 		pid:            pid,
 		fileDescriptor: fileDescriptor,
 	}
-	interceptors["proxy"] = interceptor.NewProxy(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro)
+	interceptors := map[string]interceptor.Interceptor{
+		"proxy": interceptor.NewProxy(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro),
+	}
 
 program:
 	for {

@@ -12,7 +12,7 @@ import (
 )
 
 type proxy struct {
-	Filename     string
+	filename     string
 	url          string
 	httpClient   http.Client
 	Size         int64
@@ -36,7 +36,7 @@ type Provider interface {
 
 func NewProxy(filename, url string, provider Provider) *proxy {
 	p := proxy{
-		Filename:   filename,
+		filename:   filename,
 		url:        url,
 		Size:       -1,
 		httpClient: http.Client{Timeout: 5 * time.Second},
@@ -61,7 +61,7 @@ func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	switch syscallNum {
 	case syscall.SYS_LSEEK:
 		// off_t lseek(int fildes, off_t offset, int whence)
-		if p.Filename == p.provider.FileName(arg1) {
+		if p.filename == p.provider.FileName(arg1) {
 			oldOffset := p.Cursor
 			newOffset := int64(-1)
 			// If whence is SEEK_SET, the file offset shall be set to offset bytes.
@@ -82,7 +82,7 @@ func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 		}
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
-		if arg1 == p.provider.FileDescriptor(p.Filename) {
+		if arg1 == p.provider.FileDescriptor(p.filename) {
 			buf, err := p.Read(arg1, arg3)
 			if err != nil {
 				panic(fmt.Sprintf("Read: %v", err))
@@ -155,7 +155,7 @@ func (p *proxy) fetchSize() {
 }
 
 func (p *proxy) Read(fd int, n int) ([]byte, error) {
-	if fd != p.provider.FileDescriptor(p.Filename) {
+	if fd != p.provider.FileDescriptor(p.filename) {
 		return []byte{}, nil
 	}
 
@@ -203,9 +203,9 @@ func (p *proxy) Read(fd int, n int) ([]byte, error) {
 }
 
 func (p *proxy) open() {
-	file, err := os.Create(p.Filename)
+	file, err := os.Create(p.filename)
 	if err != nil {
-		panic(fmt.Sprintf(`creating file "%s": %v`, p.Filename, err))
+		panic(fmt.Sprintf(`creating file "%s": %v`, p.filename, err))
 	}
 	p.file = file
 }

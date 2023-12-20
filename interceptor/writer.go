@@ -10,7 +10,7 @@ import (
 
 type writer struct {
 	provider Provider
-	temp     string
+	path     string
 }
 
 func Writer(provider Provider) *writer {
@@ -30,9 +30,8 @@ func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 		str += fmt.Sprintf(`() `)
 	case syscall.SYS_OPEN:
 		// int open(const char *path, int oflag, ...)
-		path := w.provider.ReadPtraceText(uintptr(arg1))
-		w.temp = path
-		str += fmt.Sprintf(`("%s", %d) `, path, arg2)
+		w.path = w.provider.ReadPtraceText(uintptr(arg1))
+		str += fmt.Sprintf(`("%s", %d) `, w.path, arg2)
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
 		fd := formatFileDesc(arg1, w.provider.FileName(arg1))
@@ -70,10 +69,9 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 	switch syscallNum {
 	case syscall.SYS_OPEN:
 		// int open(const char *path, int oflag, ...)
-		path := w.temp
 		fd := retVal
 		str += fmt.Sprintf(`%d`, fd)
-		w.provider.PutFileDescriptor(fd, path)
+		w.provider.PutFileDescriptor(fd, w.path)
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
 		if retVal <= arg3 {

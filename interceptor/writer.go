@@ -68,9 +68,6 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 	str := ""
 
 	switch syscallNum {
-	case syscall.SYS_GETUID, syscall.SYS_GETEUID:
-		// uid_t get[e]uid(void)
-		str += fmt.Sprintf(`= %d`, retVal)
 	case syscall.SYS_OPEN:
 		// int open(const char *path, int oflag, ...)
 		path := w.temp
@@ -85,14 +82,10 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 		} else {
 			str += fmt.Sprintf(`= %d`, retVal)
 		}
-	case syscall.SYS_LSEEK:
-		// off_t lseek(int fildes, off_t offset, int whence)
-		str += fmt.Sprintf(`= %d`, retVal)
-	case syscall.SYS_WRITE:
-		// ssize_t write(int fd, const void *buf, size_t count)
-		str += fmt.Sprintf(`= %d`, retVal)
-	case syscall.SYS_STAT:
-		// int stat(const char *restrict pathname, struct stat *restrict statbuf)
+	case syscall.SYS_GETUID, syscall.SYS_GETEUID,
+		syscall.SYS_LSEEK,
+		syscall.SYS_WRITE,
+		syscall.SYS_STAT:
 		str += fmt.Sprintf(`= %d`, retVal)
 	}
 

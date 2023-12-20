@@ -2,7 +2,7 @@
 
 Zero-dependency strace implementation based on [lizrice/strace-from-scratch](https://github.com/lizrice/strace-from-scratch).
 
-Arrangedto be modifiable using different `Interceptor`s. The default simply prints system calls:
+Arranged to be modifiable using different `Interceptor`s. The default simply prints system calls:
 
 ```
 docker run --rm strace echo -n hi

@@ -58,6 +58,8 @@ func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 		// int stat(const char *restrict pathname, struct stat *restrict statbuf)
 		path := w.provider.ReadPtraceText(uintptr(arg1))
 		str += fmt.Sprintf(`(%s, %d) `, path, arg2)
+	default:
+		str += "\n"
 	}
 
 	fmt.Printf("%s", str)

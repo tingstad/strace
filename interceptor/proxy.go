@@ -48,14 +48,9 @@ func New(filename, url string, provider Provider) *Proxy {
 	return &p
 }
 
-func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
-	p.Intercept(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6)
-}
-
 func (p *Proxy) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
 }
-
-func (p *Proxy) Intercept(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
+func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	if !p.enabled {
 		return
 	}

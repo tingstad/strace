@@ -50,7 +50,8 @@ func main() {
 		fileDescriptor: fileDescriptor,
 	}
 	interceptors := map[string]interceptor.Interceptor{
-		"proxy": interceptor.NewProxy(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro),
+		"proxy":  interceptor.NewProxy(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro),
+		"writer": interceptor.NewWriter(),
 	}
 
 program:

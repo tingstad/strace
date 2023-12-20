@@ -72,24 +72,24 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 		// int open(const char *path, int oflag, ...)
 		path := w.temp
 		fd := retVal
-		str += fmt.Sprintf(`= %d`, fd)
+		str += fmt.Sprintf(`%d`, fd)
 		w.provider.PutFileDescriptor(fd, path)
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
 		if retVal <= arg3 {
 			buf := shortString(w.provider.ReadPtraceTextBuf(uintptr(arg2), retVal))
-			str += fmt.Sprintf(`= %d: %s`, retVal, buf)
+			str += fmt.Sprintf(`%d: %s`, retVal, buf)
 		} else {
-			str += fmt.Sprintf(`= %d`, retVal)
+			str += fmt.Sprintf(`%d`, retVal)
 		}
 	case syscall.SYS_GETUID, syscall.SYS_GETEUID,
 		syscall.SYS_LSEEK,
 		syscall.SYS_WRITE,
 		syscall.SYS_STAT:
-		str += fmt.Sprintf(`= %d`, retVal)
+		str += fmt.Sprintf(`%d`, retVal)
 	}
 
-	fmt.Printf("%s\n", str)
+	fmt.Printf("= %s\n", str)
 }
 
 func formatFileDesc(fd int, path string) string {

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type Proxy struct {
+type proxy struct {
 	Filename     string
 	url          string
 	httpClient   http.Client
@@ -32,8 +32,8 @@ type Provider interface {
 	FileName(fd int) string
 }
 
-func New(filename, url string, provider Provider) *Proxy {
-	p := Proxy{
+func New(filename, url string, provider Provider) *proxy {
+	p := proxy{
 		Filename:   filename,
 		url:        url,
 		Size:       -1,
@@ -48,9 +48,9 @@ func New(filename, url string, provider Provider) *Proxy {
 	return &p
 }
 
-func (p *Proxy) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
+func (p *proxy) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
 }
-func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
+func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	if !p.enabled {
 		return
 	}
@@ -103,14 +103,14 @@ func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	}
 }
 
-func (p *Proxy) getSize() int64 {
+func (p *proxy) getSize() int64 {
 	if p.Size == -1 {
 		p.fetchSize()
 	}
 	return p.Size
 }
 
-func (p *Proxy) fetchSize() {
+func (p *proxy) fetchSize() {
 	resp, err := p.httpClient.Head(p.url)
 	if err != nil {
 		panic(fmt.Sprintf("HTTP HEAD failed: %v", err))
@@ -151,7 +151,7 @@ func (p *Proxy) fetchSize() {
 	fmt.Println("wrote bytes: ", n)
 }
 
-func (p *Proxy) Read(fd int, n int) ([]byte, error) {
+func (p *proxy) Read(fd int, n int) ([]byte, error) {
 	if fd != p.provider.FileDescriptor(p.Filename) {
 		return []byte{}, nil
 	}
@@ -199,7 +199,7 @@ func (p *Proxy) Read(fd int, n int) ([]byte, error) {
 	return buf, nil
 }
 
-func (p *Proxy) open() {
+func (p *proxy) open() {
 	file, err := os.Create(p.Filename)
 	if err != nil {
 		panic(fmt.Sprintf(`creating file "%s": %v`, p.Filename, err))

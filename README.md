@@ -24,7 +24,7 @@ exit_group
 Another interceptor can be enabled with env variables:
 
 ```
-INTER_FILE=file.zip INTER_URL=https://i.ting.st/pg2701.epub ./main unzip -l file.zip
+FILE=file.zip URL=https://i.ting.st/pg2701.epub ./main unzip -l file.zip
 ...
 lseek(3<file.zip>, 628018, SEEK_SET) = 628018
 read(3<file.zip>, 140725387582132, 4)

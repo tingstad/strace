@@ -12,5 +12,5 @@ jobs:
           strace tail -n1 LICENSE
           docker build -t strace --build-arg GO_VERSION=$(make goversion) .
           docker run -i --rm strace tail -n1 LICENSE
-          docker run -i --rm -e INTER_FILE=file.zip -e INTER_URL=https://i.ting.st/pg2701.epub strace unzip -l file.zip
+          docker run -i --rm -e FILE=file.zip -e URL=https://i.ting.st/pg2701.epub strace unzip -l file.zip
 

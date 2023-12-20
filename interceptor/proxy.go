@@ -56,14 +56,6 @@ func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	}
 
 	switch syscallNum {
-	case syscall.SYS_OPEN + 99999: //TODO: enable?
-		// int open(const char *path, int oflag, ...)
-		path := p.provider.ReadPtraceText(uintptr(arg1))
-		if p.Size < 0 && path == p.Filename {
-			fmt.Println(fmt.Sprintf("OPENED %s", path))
-			p.Open()
-			p.fetchSize()
-		}
 	case syscall.SYS_LSEEK:
 		// off_t lseek(int fildes, off_t offset, int whence)
 		if p.Filename == p.provider.FileName(arg1) {

@@ -43,7 +43,7 @@ func New(filename, url string, provider Provider) *Proxy {
 	}
 	if p.enabled {
 		p.open()
-		p.GetSize()
+		p.getSize()
 	}
 	return &p
 }
@@ -71,7 +71,7 @@ func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 			case 1: // SEEK_CUR
 				newOffset = oldOffset + offset
 			case 2: // SEEK_END
-				newOffset = p.GetSize() + offset
+				newOffset = p.getSize() + offset
 			default:
 				panic(fmt.Sprintf("LSEEK whence/arg3 unexpected value: %d", whence))
 			}
@@ -103,7 +103,7 @@ func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	}
 }
 
-func (p *Proxy) GetSize() int64 {
+func (p *Proxy) getSize() int64 {
 	if p.Size == -1 {
 		p.fetchSize()
 	}

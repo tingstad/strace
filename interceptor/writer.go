@@ -8,13 +8,14 @@ import (
 	"syscall"
 )
 
+// Writer writes syscalls to the console stdout
+func Writer(provider Provider) *writer {
+	return &writer{provider, ""}
+}
+
 type writer struct {
 	provider Provider
 	path     string
-}
-
-func Writer(provider Provider) *writer {
-	return &writer{provider, ""}
 }
 
 func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {

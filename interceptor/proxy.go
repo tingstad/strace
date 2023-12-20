@@ -11,21 +11,7 @@ import (
 	"time"
 )
 
-type proxy struct {
-	filename     string
-	url          string
-	httpClient   http.Client
-	size         int64
-	cursor       int64
-	date         string
-	lastModified string
-	contentType  string
-	file         *os.File
-	enabled      bool
-	interceptors map[int]func()
-	provider     Provider
-}
-
+// Proxy proxies `read` from a given file to HTTP Range requests
 func Proxy(filename, url string, provider Provider) *proxy {
 	p := proxy{
 		filename:   filename,
@@ -40,6 +26,21 @@ func Proxy(filename, url string, provider Provider) *proxy {
 		p.getSize()
 	}
 	return &p
+}
+
+type proxy struct {
+	filename     string
+	url          string
+	httpClient   http.Client
+	size         int64
+	cursor       int64
+	date         string
+	lastModified string
+	contentType  string
+	file         *os.File
+	enabled      bool
+	interceptors map[int]func()
+	provider     Provider
 }
 
 func (p *proxy) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {

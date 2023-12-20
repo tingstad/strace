@@ -28,8 +28,10 @@ type proxy struct {
 
 type Provider interface {
 	ReadPtraceText(addr uintptr) string
+	ReadPtraceTextBuf(addr uintptr, size int) string
 	FileDescriptor(filename string) int
 	FileName(fd int) string
+	PutFileDescriptor(fd int, path string)
 }
 
 func NewProxy(filename, url string, provider Provider) *proxy {
@@ -50,6 +52,7 @@ func NewProxy(filename, url string, provider Provider) *proxy {
 
 func (p *proxy) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
 }
+
 func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	if !p.enabled {
 		return

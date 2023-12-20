@@ -7,9 +7,6 @@ import (
 	"os/exec"
 	"runtime"
 	"strace/interceptor"
-	"strace/syscalls"
-	"strconv"
-	"strings"
 	"syscall"
 )
 
@@ -49,9 +46,9 @@ func main() {
 		pid:            pid,
 		fileDescriptor: fileDescriptor,
 	}
-	interceptors := map[string]interceptor.Interceptor{
-		"proxy":  interceptor.NewProxy(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro),
-		"writer": interceptor.NewWriter(),
+	interceptors := []interceptor.Interceptor{
+		interceptor.NewWriter(&pro),
+		interceptor.NewProxy(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro),
 	}
 
 program:
@@ -59,8 +56,6 @@ program:
 		if err = syscall.PtraceGetRegs(pid, &regs); err != nil {
 			panic(fmt.Sprintf("get regs (pid %d) err: %v\n", pid, err))
 		}
-
-		syscallNum := int(regs.Orig_rax)
 
 		// https://man7.org/linux/man-pages/man2/syscall.2.html
 		//   Arch/ABI    arg1  arg2  arg3  arg4  arg5  arg6  arg7   Notes
@@ -72,6 +67,8 @@ program:
 		//   ────────────────────────────────────────────────────────────
 		//   x86-64      syscall           rax     rax  rdx  -      5
 
+		syscallNum := int(regs.Orig_rax)
+
 		arg1 := int(regs.Rdi)
 		arg2 := int(regs.Rsi)
 		arg3 := int(regs.Rdx)
@@ -79,62 +76,15 @@ program:
 		arg5 := int(regs.R8)
 		arg6 := int(regs.R9)
 
-		syscallName := strings.ToLower(syscalls.GetName(syscallNum))
-
 		if !exit {
-			fmt.Printf("%s", syscallName)
 			for _, inter := range interceptors {
 				inter.Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6)
 			}
-		} else if exit {
-
+		} else {
 			retVal := int(regs.Rax)
-
-			str := ""
-
-			switch syscallNum {
-			case syscall.SYS_GETUID, syscall.SYS_GETEUID:
-				// uid_t get[e]uid(void)
-				str += fmt.Sprintf(`() = %d`, retVal)
-			case syscall.SYS_OPEN:
-				// int open(const char *path, int oflag, ...)
-				path := readPtraceText(pid, uintptr(arg1))
-				fd := retVal
-				str += fmt.Sprintf(`("%s", %d) = %d`, path, arg2, fd)
-				fileDescriptor[fd] = path
-			case syscall.SYS_READ:
-				// ssize_t read(int fildes, void *buf, size_t nbyte)
-				fd := formatFileDesc(fileDescriptor, arg1)
-				if retVal <= arg3 {
-					buf := shortString(readPtraceTextBuf(pid, uintptr(arg2), retVal))
-					str += fmt.Sprintf(`(%s, %d, %d) = %d: %s`, fd, arg2, arg3, retVal, buf)
-				} else {
-					str += fmt.Sprintf(`(%s, %d, %d) = %d`, fd, arg2, arg3, retVal)
-				}
-			case syscall.SYS_LSEEK:
-				// off_t lseek(int fildes, off_t offset, int whence)
-				// If whence is SEEK_SET, the file offset shall be set to offset bytes.
-				// If whence is SEEK_CUR, the file offset shall be set to its current location plus offset.
-				// If whence is SEEK_END, the file offset shall be set to the size of the file plus offset.
-				// https://pubs.opengroup.org/onlinepubs/009696799/functions/lseek.html
-				fd := formatFileDesc(fileDescriptor, arg1)
-				whence := map[int]string{0: "SEEK_SET", 1: "SEEK_CUR", 2: "SEEK_END"}
-				str += fmt.Sprintf(`(%s, %d, %s) = %d`, fd, arg2, whence[arg3], retVal)
-			case syscall.SYS_MMAP:
-				// void * mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
-				str += fmt.Sprintf(`(%d, %d, %d, %d, %d, %d)`,
-					arg1, arg2, arg3, arg4, arg5, arg6)
-			case syscall.SYS_WRITE:
-				// ssize_t write(int fd, const void *buf, size_t count)
-				buf := shortString(readPtraceTextBuf(pid, uintptr(arg2), arg3))
-				str += fmt.Sprintf(`(%d, %q, %d)`, arg1, buf, arg3)
-			case syscall.SYS_STAT:
-				// int stat(const char *restrict pathname, struct stat *restrict statbuf)
-				path := readPtraceText(pid, uintptr(arg1))
-				str += fmt.Sprintf(`(%s, %d) = %d`, path, arg2, retVal)
+			for _, inter := range interceptors {
+				inter.After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal)
 			}
-
-			fmt.Printf("%s\n", str)
 		}
 
 		for {
@@ -162,21 +112,21 @@ program:
 	}
 }
 
-func formatFileDesc(descriptors map[int]string, fd int) string {
-	if path, ok := descriptors[fd]; ok {
-		return fmt.Sprintf(`%d<%s>`, fd, path)
-	} else {
-		return strconv.Itoa(fd)
-	}
-}
-
 type provider struct {
 	pid            int
 	fileDescriptor map[int]string
 }
 
+func (p *provider) PutFileDescriptor(fd int, path string) {
+	p.fileDescriptor[fd] = path
+}
+
 func (p *provider) ReadPtraceText(addr uintptr) string {
 	return readPtraceText(p.pid, addr)
+}
+
+func (p *provider) ReadPtraceTextBuf(addr uintptr, size int) string {
+	return readPtraceTextBuf(p.pid, addr, size)
 }
 
 func (p *provider) FileName(fd int) string {
@@ -213,12 +163,4 @@ func readPtraceTextBuf(pid int, addr uintptr, length int) string {
 		panic(fmt.Sprintf("ptrace peek buf: %v", err))
 	}
 	return string(buf)
-}
-
-func shortString(buf string) interface{} {
-	buf = fmt.Sprintf("%q", buf)
-	if len(buf) > 40 {
-		buf = buf[0:18] + `"..."` + buf[len(buf)-19:]
-	}
-	return buf
 }

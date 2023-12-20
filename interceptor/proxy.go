@@ -22,7 +22,7 @@ func Proxy(filename, url string, provider Provider) *proxy {
 		provider:   provider,
 	}
 	if p.enabled {
-		p.open()
+		p.createFile()
 		p.getSize()
 	}
 	return &p
@@ -195,7 +195,7 @@ func (p *proxy) Read(fd int, n int) ([]byte, error) {
 	return buf, nil
 }
 
-func (p *proxy) open() {
+func (p *proxy) createFile() {
 	file, err := os.Create(p.filename)
 	if err != nil {
 		panic(fmt.Sprintf(`creating file "%s": %v`, p.filename, err))

@@ -76,13 +76,13 @@ func (p *proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
 		if arg1 == p.provider.FileDescriptor(p.filename) {
-			buf, err := p.Read(arg1, arg3)
+			buf, err := p.read(arg1, arg3)
 			if err != nil {
-				panic(fmt.Sprintf("Read: %v", err))
+				panic(fmt.Sprintf("read: %v", err))
 			}
 			n := len(buf)
 			if n < 1 {
-				panic(fmt.Sprintf("no data from Read: %d", n))
+				panic(fmt.Sprintf("no data from read: %d", n))
 			}
 			if n < arg3 {
 				panic(fmt.Sprintf("got %d bytes but wanted %d", n, arg3))
@@ -147,7 +147,7 @@ func (p *proxy) fetchSize() {
 	fmt.Println("wrote bytes: ", n)
 }
 
-func (p *proxy) Read(fd int, n int) ([]byte, error) {
+func (p *proxy) read(fd int, n int) ([]byte, error) {
 	if fd != p.provider.FileDescriptor(p.filename) {
 		return []byte{}, nil
 	}

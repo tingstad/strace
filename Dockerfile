@@ -11,7 +11,7 @@ WORKDIR /build
 COPY go.mod go.sum *.go LICENSE ./
 COPY syscalls/ ./syscalls/
 COPY generate/ ./generate/
-COPY proxy/ ./proxy/
+COPY interceptor/ ./interceptor/
 
 RUN go generate ./... && go test ./... && go build -o main .
 

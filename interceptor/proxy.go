@@ -1,4 +1,4 @@
-package proxy
+package interceptor
 
 import (
 	"fmt"
@@ -48,6 +48,13 @@ func New(filename, url string, provider Provider) *Proxy {
 	return &p
 }
 
+func (p *Proxy) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
+	p.Intercept(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6)
+}
+
+func (p *Proxy) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
+}
+
 func (p *Proxy) Intercept(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	if !p.enabled {
 		return
@@ -82,7 +89,6 @@ func (p *Proxy) Intercept(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 				panic(fmt.Sprintf("LSEEK whence/arg3 unexpected value: %d", whence))
 			}
 			p.Cursor = newOffset
-			fmt.Println(fmt.Sprintf("LSEEKED %d from offs %d to %d", arg3, oldOffset, newOffset))
 		}
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)

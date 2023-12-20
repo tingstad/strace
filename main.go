@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strace/proxy"
+	"strace/interceptor"
 	"strace/syscalls"
 	"strconv"
 	"strings"
@@ -44,11 +44,14 @@ func main() {
 	exit := true
 
 	fileDescriptor := make(map[int]string)
+	interceptors := make(map[string]interceptor.Interceptor)
 
-	proxy := proxy.New(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &provider{
+	pro := provider{
 		pid:            pid,
 		fileDescriptor: fileDescriptor,
-	})
+	}
+	proxy := interceptor.New(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro)
+	interceptors["proxy"] = proxy
 
 program:
 	for {
@@ -75,15 +78,18 @@ program:
 		arg5 := int(regs.R8)
 		arg6 := int(regs.R9)
 
-		if !exit && proxy.IsEnabled() {
-			nm := strings.ToLower(syscalls.GetName(syscallNum))
-			fmt.Printf("intercept %s %d %d %d\n", nm, arg1, arg2, arg3)
-			proxy.Intercept(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6)
+		syscallName := strings.ToLower(syscalls.GetName(syscallNum))
+
+		if !exit {
+			fmt.Printf("%s", syscallName)
+			for _, inter := range interceptors {
+				inter.Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6)
+			}
 		} else if exit {
 
 			retVal := int(regs.Rax)
 
-			str := strings.ToLower(syscalls.GetName(syscallNum))
+			str := ""
 
 			switch syscallNum {
 			case syscall.SYS_GETUID, syscall.SYS_GETEUID:

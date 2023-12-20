@@ -105,11 +105,7 @@ program:
 				// ssize_t read(int fildes, void *buf, size_t nbyte)
 				fd := formatFileDesc(fileDescriptor, arg1)
 				if retVal <= arg3 {
-					buf := readPtraceTextBuf(pid, uintptr(arg2), retVal)
-					buf = fmt.Sprintf("%q", buf)
-					if len(buf) > 40 {
-						buf = buf[0:18] + `"..."` + buf[len(buf)-19:]
-					}
+					buf := shortString(readPtraceTextBuf(pid, uintptr(arg2), retVal))
 					str += fmt.Sprintf(`(%s, %d, %d) = %d: %s`, fd, arg2, arg3, retVal, buf)
 				} else {
 					str += fmt.Sprintf(`(%s, %d, %d) = %d`, fd, arg2, arg3, retVal)
@@ -129,7 +125,7 @@ program:
 					arg1, arg2, arg3, arg4, arg5, arg6)
 			case syscall.SYS_WRITE:
 				// ssize_t write(int fd, const void *buf, size_t count)
-				buf := readPtraceTextBuf(pid, uintptr(arg2), arg3)
+				buf := shortString(readPtraceTextBuf(pid, uintptr(arg2), arg3))
 				str += fmt.Sprintf(`(%d, %q, %d)`, arg1, buf, arg3)
 			case syscall.SYS_STAT:
 				// int stat(const char *restrict pathname, struct stat *restrict statbuf)
@@ -216,4 +212,12 @@ func readPtraceTextBuf(pid int, addr uintptr, length int) string {
 		panic(fmt.Sprintf("ptrace peek buf: %v", err))
 	}
 	return string(buf)
+}
+
+func shortString(buf string) interface{} {
+	buf = fmt.Sprintf("%q", buf)
+	if len(buf) > 40 {
+		buf = buf[0:18] + `"..."` + buf[len(buf)-19:]
+	}
+	return buf
 }

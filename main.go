@@ -50,7 +50,7 @@ func main() {
 		pid:            pid,
 		fileDescriptor: fileDescriptor,
 	}
-	proxy := interceptor.New(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro)
+	proxy := interceptor.NewProxy(os.Getenv("INTER_FILE"), os.Getenv("INTER_URL"), &pro)
 	interceptors["proxy"] = proxy
 
 program:

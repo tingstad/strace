@@ -32,7 +32,7 @@ type Provider interface {
 	FileName(fd int) string
 }
 
-func New(filename, url string, provider Provider) *proxy {
+func NewProxy(filename, url string, provider Provider) *proxy {
 	p := proxy{
 		Filename:   filename,
 		url:        url,

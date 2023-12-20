@@ -26,14 +26,6 @@ type proxy struct {
 	provider     Provider
 }
 
-type Provider interface {
-	ReadPtraceText(addr uintptr) string
-	ReadPtraceTextBuf(addr uintptr, size int) string
-	FileDescriptor(filename string) int
-	FileName(fd int) string
-	PutFileDescriptor(fd int, path string)
-}
-
 func NewProxy(filename, url string, provider Provider) *proxy {
 	p := proxy{
 		filename:   filename,

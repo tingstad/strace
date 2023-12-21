@@ -15,13 +15,13 @@ help:
 	    help       print usage\n\
 	    release    publish\n\
 	    test       run tests\n'
-all: build
-install: build
-build:
+all: test build
+install: test build
+build: syscalls/generated.go
 	go build -o $(NAME) .
 clean: cleantag
 	rm -f $(NAME)
-docker: goversion
+docker:
 	docker build -t $(NAME) --build-arg GO_VERSION=$$(make goversion) .
 release: test cleantag tag
 	git tag "$$(cat tag)" # https://go.dev/doc/modules/publishing
@@ -35,8 +35,10 @@ tag:
 	  ; echo "$$tag" > tag
 cleantag:
 	rm -f tag
-test:
+test: syscalls/generated.go
 	go test ./...
+syscalls/generated.go:
+	go generate ./...
 goversion:
 	@ awk '$$1 == "go" && $$2 ~ /^[1-9]/ && !n++ { print $$2 } END{ if(!n)\
 	    print "ERROR finding Go version in go.mod" | "cat >&2"; exit !n }' go.mod

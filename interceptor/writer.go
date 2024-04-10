@@ -18,6 +18,9 @@ type writer struct {
 	path     string
 }
 
+var syscall_OPEN = -1
+var openPathArg2 = false
+
 func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	syscallName := strings.ToLower(syscalls.GetName(syscallNum))
 
@@ -27,6 +30,15 @@ func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	case syscall.SYS_GETUID, syscall.SYS_GETEUID:
 		// uid_t get[e]uid(void)
 		str += fmt.Sprintf(`() `)
+	case syscall_OPEN:
+		// int open(const char *path, int oflag, ...)
+		// int openat(int dirfd, const char *pathname, int flags
+		openPathArg := arg1
+		if openPathArg2 {
+			openPathArg = arg2
+		}
+		w.path = w.provider.ReadPtraceText(uintptr(openPathArg))
+		str += fmt.Sprintf(`("%s", %d) `, w.path, arg2)
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
 		fd := formatFileDesc(arg1, w.provider.FileName(arg1))
@@ -60,6 +72,11 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 	str := ""
 
 	switch syscallNum {
+	case syscall_OPEN:
+		// int open(const char *path, int oflag, ...)
+		fd := retVal
+		str += fmt.Sprintf(`%d`, fd)
+		w.provider.PutFileDescriptor(fd, w.path)
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
 		if retVal <= arg3 {

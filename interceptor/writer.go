@@ -18,6 +18,9 @@ type writer struct {
 	path     string
 }
 
+var syscall_OPEN = -1
+var openPathArg2 = false
+
 func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	syscallName := strings.ToLower(syscalls.GetName(syscallNum))
 
@@ -27,9 +30,14 @@ func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 	case syscall.SYS_GETUID, syscall.SYS_GETEUID:
 		// uid_t get[e]uid(void)
 		str += fmt.Sprintf(`() `)
-	case syscall.SYS_OPEN:
+	case syscall_OPEN:
 		// int open(const char *path, int oflag, ...)
-		w.path = w.provider.ReadPtraceText(uintptr(arg1))
+		// int openat(int dirfd, const char *pathname, int flags
+		openPathArg := arg1
+		if openPathArg2 {
+			openPathArg = arg2
+		}
+		w.path = w.provider.ReadPtraceText(uintptr(openPathArg))
 		str += fmt.Sprintf(`("%s", %d) `, w.path, arg2)
 	case syscall.SYS_READ:
 		// ssize_t read(int fildes, void *buf, size_t nbyte)
@@ -52,10 +60,6 @@ func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 		// ssize_t write(int fd, const void *buf, size_t count)
 		buf := shortString(w.provider.ReadPtraceTextBuf(uintptr(arg2), arg3))
 		str += fmt.Sprintf(`(%d, %q, %d) `, arg1, buf, arg3)
-	case syscall.SYS_STAT:
-		// int stat(const char *restrict pathname, struct stat *restrict statbuf)
-		path := w.provider.ReadPtraceText(uintptr(arg1))
-		str += fmt.Sprintf(`(%s, %d) `, path, arg2)
 	default:
 		str += "\n"
 	}
@@ -68,7 +72,7 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 	str := ""
 
 	switch syscallNum {
-	case syscall.SYS_OPEN:
+	case syscall_OPEN:
 		// int open(const char *path, int oflag, ...)
 		fd := retVal
 		str += fmt.Sprintf(`%d`, fd)
@@ -83,8 +87,7 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 		}
 	case syscall.SYS_GETUID, syscall.SYS_GETEUID,
 		syscall.SYS_LSEEK,
-		syscall.SYS_WRITE,
-		syscall.SYS_STAT:
+		syscall.SYS_WRITE:
 		str += fmt.Sprintf(`%d`, retVal)
 	}
 

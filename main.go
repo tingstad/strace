@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strace/interceptor"
+	"strace/syscalls"
 	"syscall"
 )
 
@@ -57,31 +58,23 @@ program:
 			panic(fmt.Sprintf("get regs (pid %d) err: %v\n", pid, err))
 		}
 
-		// https://man7.org/linux/man-pages/man2/syscall.2.html
-		//   Arch/ABI    arg1  arg2  arg3  arg4  arg5  arg6  arg7   Notes
-		//   ────────────────────────────────────────────────────────────
-		//   x86-64      rdi   rsi   rdx   r10   r8    r9    -
-		//
-		//   Arch/ABI    Instruction       System  Ret  Ret  Error  Notes
-		//                                 call #  val  val2
-		//   ────────────────────────────────────────────────────────────
-		//   x86-64      syscall           rax     rax  rdx  -      5
+		r := syscalls.MapRegs(regs)
 
-		syscallNum := int(regs.Orig_rax)
+		syscallNum := r.SyscallNum
 
-		arg1 := int(regs.Rdi)
-		arg2 := int(regs.Rsi)
-		arg3 := int(regs.Rdx)
-		arg4 := int(regs.R10)
-		arg5 := int(regs.R8)
-		arg6 := int(regs.R9)
+		arg1 := r.Arg1
+		arg2 := r.Arg2
+		arg3 := r.Arg3
+		arg4 := r.Arg4
+		arg5 := r.Arg5
+		arg6 := r.Arg6
 
 		if !exit {
 			for _, inter := range interceptors {
 				inter.Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6)
 			}
 		} else {
-			retVal := int(regs.Rax)
+			retVal := r.RetVal
 			for _, inter := range interceptors {
 				inter.After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal)
 			}

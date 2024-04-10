@@ -15,6 +15,12 @@ func GetName(syscallID int) string {
 	}
 }
 
+var MapRegs func(regs syscall.PtraceRegs) Regs
+
+type Regs struct {
+	SyscallNum, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, RetVal int
+}
+
 // common UNIX system calls, present in all of
 // zsysnum_{darwin,dragonfly,freebsd,linux,netbsd,openbsd}_*
 var syscallNames = map[int]string{

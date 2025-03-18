@@ -12,7 +12,8 @@ import (
 )
 
 // Proxy proxies `read` from a given file to HTTP Range requests
-func Proxy(filename, url string, provider Provider) *proxy {
+func Proxy(filename, url string, provider Provider) Interceptor {
+	stderr := os.Stderr
 	p := proxy{
 		filename:   filename,
 		url:        url,
@@ -20,6 +21,7 @@ func Proxy(filename, url string, provider Provider) *proxy {
 		httpClient: http.Client{Timeout: 5 * time.Second},
 		enabled:    filename != "" && url != "",
 		provider:   provider,
+		stderr:     stderr,
 	}
 	if p.enabled {
 		p.createFile()
@@ -41,6 +43,8 @@ type proxy struct {
 	enabled      bool
 	interceptors map[int]func()
 	provider     Provider
+	stderr       *os.File
+	isTTY        bool
 }
 
 func (p *proxy) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
@@ -142,9 +146,9 @@ func (p *proxy) fetchSize() {
 			lines = append(lines, fmt.Sprintf("< %s: %s", name, value))
 		}
 	}
-	fmt.Println(fmt.Sprintf("\n%s\n", strings.Join(lines, "\n")))
+	_, _ = p.stderr.WriteString(fmt.Sprintf("\n%s\n", strings.Join(lines, "\n")))
 
-	fmt.Println("wrote bytes: ", n)
+	_, _ = p.stderr.WriteString(fmt.Sprintf("wrote bytes: %d\n", n))
 }
 
 func (p *proxy) read(fd int, n int) ([]byte, error) {
@@ -181,7 +185,7 @@ func (p *proxy) read(fd int, n int) ([]byte, error) {
 			lines = append(lines, fmt.Sprintf("< %s: %s", name, value))
 		}
 	}
-	fmt.Println(fmt.Sprintf("\n%s\n", strings.Join(lines, "\n")))
+	_, _ = p.stderr.WriteString(fmt.Sprintf("\n%s\n", strings.Join(lines, "\n")))
 
 	if statusCode := resp.StatusCode; statusCode >= 300 {
 		panic(fmt.Sprintf("GET returned status code %d", statusCode))

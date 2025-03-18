@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	"fmt"
+	"os"
 	"strace/syscalls"
 	"strconv"
 	"strings"
@@ -9,13 +10,14 @@ import (
 )
 
 // Writer writes syscalls to the console stdout
-func Writer(provider Provider) *writer {
-	return &writer{provider, ""}
+func Writer(provider Provider) Interceptor {
+	return &writer{provider, "", os.Stderr}
 }
 
 type writer struct {
 	provider Provider
 	path     string
+	fd       *os.File
 }
 
 var syscall_OPEN = -1
@@ -64,7 +66,7 @@ func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 		str += "\n"
 	}
 
-	fmt.Printf("%s", str)
+	_, _ = w.fd.WriteString(fmt.Sprintf("%s\n", str))
 }
 
 func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
@@ -92,7 +94,7 @@ func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal in
 	}
 
 	if len(str) > 0 {
-		fmt.Printf("= %s\n", str)
+		_, _ = w.fd.WriteString(fmt.Sprintf("= %s\n", str))
 	}
 }
 

@@ -14,7 +14,8 @@ import (
 func main() {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
-	fmt.Printf("Run %v\n", os.Args[1:])
+	stderr := os.Stderr
+	_, _ = stderr.WriteString(fmt.Sprintf("Run %v\n", os.Args[1:]))
 
 	cmd := exec.Command(os.Args[1], os.Args[2:]...)
 	cmd.Stderr = os.Stderr
@@ -93,13 +94,15 @@ program:
 				panic(fmt.Sprintf("wait4 err: %v", err))
 			}
 			if wstatus.Exited() {
-				fmt.Printf("target process exited with code %d\n", wstatus.ExitStatus())
+				_, _ = stderr.WriteString(fmt.Sprintf(
+					"target process exited with code %d\n", wstatus.ExitStatus()))
 				break program
 			}
 			if wstatus.TrapCause() > -1 {
 				break
 			}
-			fmt.Printf("wstatus: %t %t %t %t %d\n", wstatus.Continued(), wstatus.Stopped(), wstatus.Signaled(), wstatus.Exited(), wstatus.TrapCause())
+			_, _ = stderr.WriteString(fmt.Sprintf("wstatus: %t %t %t %t %d\n",
+				wstatus.Continued(), wstatus.Stopped(), wstatus.Signaled(), wstatus.Exited(), wstatus.TrapCause()))
 		}
 		exit = !exit
 	}

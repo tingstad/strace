@@ -66,7 +66,7 @@ func (w *writer) Before(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6 int) {
 		str += "\n"
 	}
 
-	_, _ = w.fd.WriteString(fmt.Sprintf("%s\n", str))
+	_, _ = w.fd.WriteString(fmt.Sprintf("%s", str))
 }
 
 func (w *writer) After(syscallNum, arg1, arg2, arg3, arg4, arg5, arg6, retVal int) {
